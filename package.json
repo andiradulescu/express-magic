@@ -1,9 +1,17 @@
 {
   "name": "express-magic",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Automagically load Express routes",
   "main": "index.js",
-  "keywords": ["express", "routes", "automatic"],
   "author": "Adam K Dean <adamkdean@googlemail.com>",
-  "license": "GPL-3.0"
+  "license": "GPL-3.0",
+  "type": "module",
+  "keywords": [
+    "express",
+    "routes",
+    "automatic"
+  ],
+  "dependencies": {
+    "express": "^4.21.2"
+  }
 }
