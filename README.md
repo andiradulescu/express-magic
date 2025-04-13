@@ -117,11 +117,11 @@ export default router
 ```javascript
 import express from 'express'
 
-export default function() {
+export default function(context) {
   const router = express.Router()
 
   router.post('/', (req, res) => {
-    res.json({ message: 'Login endpoint' })
+    res.json({ message: 'Login endpoint', context })
   })
 
   return router
@@ -137,6 +137,37 @@ export default function() {
 app.use(magic('routes', { prefix: '/api' }))
 ```
 
+### Injecting Context into Routes
+
+You can pass additional properties in the options object that will be injected into function-based route modules:
+
+```javascript
+// Pass context to route functions
+app.use(magic('routes', {
+  prefix: '/api',
+  authService: myAuthService,
+  config: { maxUploadSize: '10mb' }
+}))
+```
+
+Then in your route file:
+
+```javascript
+export default function({ authService, config }) {
+  const router = express.Router()
+
+  router.post('/upload', (req, res) => {
+    // Use injected context
+    res.json({
+      message: 'Upload endpoint',
+      maxSize: config.maxUploadSize
+    })
+  })
+
+  return router
+}
+```
+
 ## How It Works
 
 Express Magic recursively scans the specified directory and:
@@ -146,6 +177,7 @@ Express Magic recursively scans the specified directory and:
    - `index.js` files are mounted at the current path level
    - Other `.js` files are mounted using their filename
 3. Supports both direct router exports and function-based exports
+4. Passes any additional options as context to function-based route modules
 
 ## License
 
