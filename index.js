@@ -50,8 +50,9 @@ function resolveCallerDir() {
  * @param {express.Router} router - The Express router to mount routes onto
  * @param {string} dirPath - Absolute path to the directory containing route modules
  * @param {string} [baseRoute=''] - Accumulated base route (using POSIX-style joins)
+ * @param {object} [context={}] - Additional properties to pass to route functions
  */
-const mountRoutes = (router, dirPath, baseRoute = '') => {
+const mountRoutes = (router, dirPath, baseRoute = '', context = {}) => {
 
   const entries = fs.readdirSync(dirPath, { withFileTypes: true })
 
@@ -60,7 +61,7 @@ const mountRoutes = (router, dirPath, baseRoute = '') => {
 
     if (entry.isDirectory()) {
       const newBaseRoute = path.posix.join(baseRoute, entry.name)
-      mountRoutes(router, fullPath, newBaseRoute)
+      mountRoutes(router, fullPath, newBaseRoute, context)
     } else if (entry.isFile() && entry.name.endsWith('.js')) {
       let routePath
       if (entry.name === 'index.js') {
@@ -81,7 +82,7 @@ const mountRoutes = (router, dirPath, baseRoute = '') => {
       if (typeof routeModule === 'function' && typeof routeModule.handle === 'function') {
         loadedRoute = routeModule
       } else if (typeof routeModule === 'function') {
-        loadedRoute = routeModule()
+        loadedRoute = routeModule(context)
       } else {
         throw new Error(`The module at ${fullPath} did not return a valid Express router`)
       }
@@ -100,11 +101,16 @@ const mountRoutes = (router, dirPath, baseRoute = '') => {
  * @param {string} routesDir - The path to the routes directory (absolute or relative)
  * @param {object} [options={}] - Optional settings
  * @param {string} [options.prefix] - A prefix to apply to all loaded routes (e.g. '/api')
+ * @param {...any} - Any additional properties in options will be passed to route functions
  * @returns {express.Router} An Express Router with all routes automagically mounted
  */
 export default function magic(routesDir, options = {}) {
   const router = express.Router()
   const prefix = options.prefix || ''
+
+  // Extract context from options by creating a copy without the prefix property
+  const context = { ...options }
+  delete context.prefix
 
   // Resolve routesDir: if it's not absolute, assume it's relative to process.cwd().
   const baseDir = path.isAbsolute(routesDir)
@@ -117,7 +123,7 @@ export default function magic(routesDir, options = {}) {
   }
 
   // Mount routes using the mountRoutes function
-  mountRoutes(router, baseDir)
+  mountRoutes(router, baseDir, '', context)
 
   // If a prefix is provided, wrap the router
   if (prefix) {
