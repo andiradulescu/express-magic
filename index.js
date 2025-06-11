@@ -11,6 +11,26 @@ import { fileURLToPath } from 'url'
 const require = createRequire(import.meta.url)
 
 /**
+ * Checks if a filename matches Node.js test file patterns
+ *
+ * @param {string} filename - The filename to check
+ * @returns {boolean} True if the file is a test file
+ */
+function isTestFile(filename) {
+  // Node.js test patterns for .js files
+  // https://nodejs.org/api/test.html#running-tests-from-the-command-line
+  const testPatterns = [
+    /\.test\.js$/,
+    /-test\.js$/,
+    /_test\.js$/,
+    /^test-.*\.js$/,
+    /^test\.js$/
+  ]
+
+  return testPatterns.some(pattern => pattern.test(filename))
+}
+
+/**
  * Attempts to get the caller's directory using the error stack
  *
  * This function parses the stack trace to retrieve the file name of the caller
@@ -62,7 +82,7 @@ const mountRoutes = (router, dirPath, baseRoute = '', context = {}) => {
     if (entry.isDirectory()) {
       const newBaseRoute = path.posix.join(baseRoute, entry.name)
       mountRoutes(router, fullPath, newBaseRoute, context)
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
+    } else if (entry.isFile() && entry.name.endsWith('.js') && !isTestFile(entry.name)) {
       let routePath
       if (entry.name === 'index.js') {
         routePath = baseRoute
